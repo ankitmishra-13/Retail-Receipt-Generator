@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AutoZone Receipt Generator
 
-## Getting Started
+A customizable AutoZone-style retail receipt generator built with **Next.js** and **React**. Designed with a red-blue-white theme and realistic receipt layout, it allows users to input purchase information, generate a live receipt preview, and export it as PDF or ZIP.
 
-First, run the development server:
+---
 
-```bash
+## 🚀 Features
+
+- 🔧 **Editable Fields** – Store info, items, dates, and messages can be modified in real-time.
+- 🖼️ **Logo Upload** – Upload a custom logo to brand your receipt.
+- 🧾 **Auto Calculation** – Calculates subtotal, tax (8%), total, and change automatically.
+- 📦 **Download Options** – Export your receipt as PDF or ZIP with embedded PNG image.
+- 🖨️ **Print Support** – Print the generated receipt directly from the browser.
+- ➕ **Add/Remove Items** – Dynamically manage purchased items.
+- 🎨 **Themed UI** – Clean modern design with red, blue, and white accents.
+
+---
+
+## 🛠 Setup Instructions
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) v16 or higher
+- npm or yarn
+
+### 1. Clone the Repository:
+
+git clone https://github.com/your-username/autozone-receipt.git
+cd autozone-receipt
+
+2. Install Dependencies:
+
+npm install
+# or
+yarn
+
+3. Run the Development Server
+
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000 in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+🧪 How to Use:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill in the receipt form fields: Date, Time, Items, Cash Paid, etc.
 
-## Learn More
+Add your store logo or leave it empty for default.
 
-To learn more about Next.js, take a look at the following resources:
+Preview will update in real-time on the right side.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Click Print, Download PDF, or Download ZIP to export your receipt.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+📂 Project Structure:
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+src/
+├── app/
+│   └── page.tsx             # Main Receipt Form and Preview
+├── components/ui/           # Reusable UI elements (Input, Textarea, Button, etc.)
+├── public/                  # Static files like placeholder logos
+└── styles/                  # Optional: Tailwind or custom CSS (if extended)
