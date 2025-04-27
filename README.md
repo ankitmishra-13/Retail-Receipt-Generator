@@ -25,19 +25,19 @@ A customizable AutoZone-style retail receipt generator built with **Next.js** an
 
 ### 1. Clone the Repository:
 
-git clone https://github.com/your-username/autozone-receipt.git
+git clone https://github.com/ankitmishra-13/autozone-receipt.git
 cd autozone-receipt
 
 2. Install Dependencies:
 
 npm install
-# or
+
 yarn
 
 3. Run the Development Server
 
 npm run dev
-# or
+
 yarn dev
 
 Then open http://localhost:3000 in your browser.
