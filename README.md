@@ -49,7 +49,8 @@ Preview will update in real-time on the right side.
 
 Click Print, Download PDF, or Download ZIP to export your receipt.
 
-```bash📂 Project Structure
+```bash
+📂 Project Structure
 
 src/
 ├── app/
