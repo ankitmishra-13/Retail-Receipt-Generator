@@ -33,6 +33,7 @@ cd autozone-receipt
 npm install
  or
 yarn
+
 3. Run the Development Server
 
 npm run dev
