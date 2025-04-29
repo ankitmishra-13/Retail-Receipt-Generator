@@ -1,6 +1,6 @@
 # AutoZone Receipt Generator
 
-A customizable AutoZone-style retail receipt generator built with **Next.js** and **React**. Designed with a red-blue-white theme and realistic receipt layout, it allows users to input purchase information, generate a live receipt preview, and export it as PDF or ZIP.
+A customizable AutoZone-style retail receipt generator built with **Next.js** and **React**. Designed with a Aotozone style and realistic receipt layout, it allows users to input purchase information, generate a live receipt preview, and print it.
 
 ---
 
