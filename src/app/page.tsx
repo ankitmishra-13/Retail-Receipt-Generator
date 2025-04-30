@@ -230,7 +230,7 @@ export default function AutoZoneReceiptForm() {
           <Input value={form.barcode} onChange={(e) => updateField('barcode', e.target.value)} />
           </div>
           <div>
-          <Label># Of Items Sold</Label>1
+          <Label># Of Items Sold</Label>
           <Input value={form.items.length} readOnly className="bg-gray-200 dark:bg-gray-800" />
           </div>
           <div>
