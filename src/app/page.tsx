@@ -36,7 +36,7 @@ export default function AutoZoneReceiptForm() {
 
   const receiptRef = useRef(null);
 
-  const updateItem = (index, field, value) => {
+  const updateItem = (index: number, field: string, value: any) => {
     const updated = [...form.items];
     updated[index][field] = field === 'price' ? parseFloat(value) : value;
     setForm({ ...form, items: updated });
@@ -55,13 +55,13 @@ export default function AutoZoneReceiptForm() {
     });
   };
 
-  const removeItem = (index) => {
+  const removeItem = (index: number) => {
     const updated = [...form.items];
     updated.splice(index, 1);
     setForm({ ...form, items: updated });
   };
 
-  const updateField = (field, value) => {
+  const updateField = (field: string, value: any) => {
     if (field === 'cashPaid') {
       const newVal = parseFloat(value);
       setForm({ ...form, [field]: isNaN(newVal) ? '' : newVal });
@@ -81,9 +81,9 @@ export default function AutoZoneReceiptForm() {
         alert("Receipt content is not available.");
         return;
       }
-      const printContents = receiptRef.current.innerHTML;
+      const printContents = (receiptRef.current as HTMLDivElement).innerHTML;
       const printWindow = window.open('', '', 'width=600,height=800');
-      printWindow.document.write(`
+      printWindow!.document.write(`
         <html>
           <head>
             <title>Print Receipt</title>
@@ -121,8 +121,8 @@ export default function AutoZoneReceiptForm() {
           </body>
         </html>
       `);
-      printWindow.document.close();
-      printWindow.print();
+      printWindow!.document.close();
+      printWindow!.print();
     } else {
       alert("Please accept the Terms and Conditions before printing.");
     }
@@ -136,22 +136,14 @@ export default function AutoZoneReceiptForm() {
         <h1 className="text-3xl font-bold text-left align mb-4">AutoZone Retail Receipt</h1>
 
         <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
-          
           <Label>Store Name (Fixed)</Label>
           <Input value={form.storeName} readOnly className="bg-gray-200 dark:bg-gray-800" />
-
-          <Label>Date</Label>
-          <Input type="date" value={form.date} onChange={(e) => updateField('date', e.target.value)} />
-
-          <Label>Time</Label>
-          <Input type="time" value={form.time} onChange={(e) => updateField('time', e.target.value)} />
-
           <Label>Upload Logo</Label>
           <div className="relative border border-dashed h-16 flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-2">
             {form.logo ? (
               <>
                 <img src={form.logo} alt="Logo" className="h-full object-contain" />
-                <Button size="icon" variant="ghost"className="text-red-500 absolute top-1 right-1" onClick={() => updateField('logo', '')}>
+                <Button size="icon" variant="ghost" className="text-red-500 absolute top-1 right-1 text-white" onClick={() => updateField('logo', '')}>
                   <Trash2 size={16} />
                 </Button>
               </>
@@ -163,7 +155,7 @@ export default function AutoZoneReceiptForm() {
               accept="image/*"
               className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
               onChange={(e) => {
-                const file = e.target.files[0];
+                const file = e.target.files?.[0];
                 if (file && file.type.startsWith('image/')) {
                   updateField('logo', URL.createObjectURL(file));
                 } else {
@@ -172,13 +164,37 @@ export default function AutoZoneReceiptForm() {
               }}
             />
           </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+          <div>
+          <Label>Date</Label> 
+          <Input type="date" value={form.date} onChange={(e) => updateField('date', e.target.value)} />
+          </div>
+          <div>   
+          <Label>Time</Label>
+          <Input type="time" value={form.time} onChange={(e) => updateField('time', e.target.value)} />
+          </div>       
+          </div>
 
           <Label>Store Address</Label>
           <Textarea value={form.storeAddress} onChange={(e) => updateField('storeAddress', e.target.value)} />
-
+          <div className="whitespace-pre-line"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              updateField('storeAddress', form.storeAddress + '\n');
+            }
+          }}
+          />
+          <div className="flex justify-end mt-2">
+            <Button onClick={addItem} className="bg-green-600 hover:bg-green-700 text-white">+</Button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
           {form.items.map((item, index) => (
             <div key={index} className="relative bg-gray-100 dark:bg-gray-800 p-2 rounded shadow mt-2">
-              <Button size="icon" variant="ghost" className="text-red-500 absolute top-1 right-1" onClick={() => removeItem(index)}>
+              <Button size="icon" variant="ghost" className="text-red-500 absolute top-1 right-1 text-white" onClick={() => removeItem(index)}>
                 <Trash2 size={16} />
               </Button>
               <Label>Item Code</Label>
@@ -197,21 +213,31 @@ export default function AutoZoneReceiptForm() {
               </Select>
             </div>
           ))}
-
-          <div className="flex space-x-2 mt-2">
-            <Button onClick={addItem} className="bg-green-600 hover:bg-green-700">Add Item</Button>
+          
           </div>
-
+          
+          <div className="grid grid-cols-2 gap-2">
+          <div> 
           <Label>Register Info</Label>
           <Input value={form.registerInfo} onChange={(e) => updateField('registerInfo', e.target.value)} />
           <Label>Transaction Number</Label>
           <Input value={form.transactionNumber} onChange={(e) => updateField('transactionNumber', e.target.value)} />
+          </div>
+          <div>
           <Label>Store Number</Label>
           <Input value={form.storeNumber} onChange={(e) => updateField('storeNumber', e.target.value)} />
           <Label>Barcode</Label>
           <Input value={form.barcode} onChange={(e) => updateField('barcode', e.target.value)} />
-          <Label># Of Items Sold</Label>
+          </div>
+          <div>
+          <Label># Of Items Sold</Label>1
           <Input value={form.items.length} readOnly className="bg-gray-200 dark:bg-gray-800" />
+          </div>
+          <div>
+            <Label>Change</Label>
+            <Input type="text" value={change.toFixed(2)} readOnly className="bg-gray-200 dark:bg-gray-700" />
+          </div>
+          </div>
           <div className="mt-4">
             <Label>Cash Paid</Label>
             <Input
@@ -224,11 +250,6 @@ export default function AutoZoneReceiptForm() {
             />
           </div>
 
-          <div className="mt-2">
-            <Label>Change</Label>
-            <Input type="text" value={change.toFixed(2)} readOnly className="bg-gray-200 dark:bg-gray-700" />
-          </div>
-
           <Label>Promotional Message</Label>
           <Textarea value={form.promoMessage} onChange={(e) => updateField('promoMessage', e.target.value)} />
 
@@ -239,25 +260,24 @@ export default function AutoZoneReceiptForm() {
           <Input value={form.referenceNumber} onChange={(e) => updateField('referenceNumber', e.target.value)} />
 
           <div className="flex items-center space-x-2 mt-4">
-          <input type="checkbox"checked={form.termsAccepted} onChange={(e) => updateField('termsAccepted', e.target.checked)}
-          className="checkbox"/>
-          <Label className="text-xs">Accept Terms and Conditions</Label>
+            <input type="checkbox" checked={form.termsAccepted} onChange={(e) => updateField('termsAccepted', e.target.checked)} className="checkbox" />
+            <Label className="text-xs">Accept Terms and Conditions</Label>
           </div>
-
 
           <div className="flex space-x-2 mt-4">
-            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">Print Receipt</Button>
-            <Button onClick={clearReceipt} className="bg-red-600 hover:bg-red-700">Clear Receipt</Button>
+            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 w-full py-2 text-lg font-semibold uppercase text-white">
+              Create Receipt
+            </Button>
+            <Button onClick={clearReceipt} className="bg-red-600 hover:bg-red-700 text-lg font-semibold uppercase text-white">
+              CLEAR
+            </Button>
           </div>
-
-        </div>
       </div>
 
       {/* Right Receipt Section */}
       <div>
         <h1 className="text-2xl font-bold text-left align mb-4">Live Preview</h1>
-
-        <Card className="border bg-white dark:bg-gray-900 shadow-xl scale-[1.0] max-w-[650px] w-full h-[720px] mx-auto overflow-y-auto" ref={receiptRef}>
+        <Card className="border bg-white dark:bg-gray-900 shadow-xl scale-[1.0] max-w-[400px] w-full h-[650px] mx-auto overflow-y-auto" ref={receiptRef}>
           <CardContent className="font-mono text-sm text-center p-4">
             {form.logo && <img src={form.logo} alt="Logo" className="h-16 mx-auto mb-2" />}
             <div className="whitespace-pre-line">
@@ -265,29 +285,35 @@ export default function AutoZoneReceiptForm() {
               {'\n'}{form.storeAddress}
               {'\n'}{form.phone}
             </div>
-            <div className="text-xs mb-2">{form.registerInfo}</div>
-            <div className="flex justify-between"><span>Transaction:</span><span>{form.transactionNumber}</span></div>
-            <div className="flex justify-between"><span>Store #:</span><span>{form.storeNumber}</span></div>
-            <div className="flex justify-between"><span>Date:</span><span>{form.date}</span></div>
-            <div className="flex justify-between"><span>Time:</span><span>{form.time}</span></div>
 
             {form.items.map((item, i) => (
-              <div key={i} className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-1">
-                <div className="text-left">{item.code}</div>
-                <div className="text-right">{item.price.toFixed(2)}</div>
+              <div key={i} className="text-left mb-2">
+                <div className="font-bold">{item.code}</div>
+                <div className="flex justify-between text-sm">
+                  <span className="truncate">{item.desc}</span>
+                  <span>${item.price.toFixed(2)} {item.taxType}</span>
+                </div>
               </div>
             ))}
 
-            <div className="mt-2">
-              <div className="text-center">SUBTOTAL: ${subtotal.toFixed(2)}</div>
-              <div className="text-center">TOTAL TAX (8%): ${tax.toFixed(2)}</div>
-              <div className="text-center font-bold">TOTAL: ${total.toFixed(2)}</div>
-              <div className="text-center">CASH: ${form.cashPaid || '0.00'}</div>
-              <div className="text-center">CHANGE: ${change.toFixed(2)}</div>
+            <div className="mt-4 text-right align">
+              <div>SUBTOTAL: ${subtotal.toFixed(2)}</div>
+              <div>TOTAL TAX (8%): ${tax.toFixed(2)}</div>
+              <div>TOTAL: ${total.toFixed(2)}</div>
+              <div>CASH: ${form.cashPaid || '0.00'}</div>
+              <div>CHANGE: ${change.toFixed(2)}</div>
             </div>
+
+            <div className="text-left align xsmb-2">{form.registerInfo}</div>
+            <div className="text-left align font-bold"><span>STR. TRANS</span><span>{form.transactionNumber}</span></div>
+            <div className="text-left align font-bold"><span>Store #</span><span>{form.storeNumber}</span></div>
+            <div className="text-left align font-bold"><span>Date </span><span>{form.date}  {form.time}</span></div>
+
+            <div className="text-left align font-bold"><span># OF ITEMS SOLD </span><span>{form.items.length}</span></div>
 
             <div className="my-4 flex flex-col items-center">
               <Barcode value={form.barcode.replace(/[^\d]/g, '')} height={40} width={1.2} displayValue={false} />
+              <div className="font-bold">{form.barcode}</div>
             </div>
 
             <div className="font-bold text-xs">{form.promoMessage}</div>
@@ -296,7 +322,6 @@ export default function AutoZoneReceiptForm() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }
