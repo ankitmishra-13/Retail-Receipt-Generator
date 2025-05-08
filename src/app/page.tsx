@@ -283,7 +283,7 @@ export default function AutoZoneReceiptForm() {
       {/* Right Receipt Section */}
       <div>
         <h1 className="text-2xl font-bold text-left align mb-4">Live Preview</h1>
-        <Card className="border bg-white dark:bg-gray-900 shadow-xl scale-[1.0] max-w-[410px] w-full h-[1000px] mx-auto overflow-y-auto"ref={receiptRef}>
+        <Card className="border bg-white dark:bg-gray-900 shadow-xl scale-[1.0] max-w-[410px] w-full h-[950px] mx-auto overflow-y-auto"ref={receiptRef}>
           <CardContent className="font-mono text-sm text-center p-4">
             {form.logo && <img src={form.logo} alt="Logo" className="h-16 mx-auto mb-2" />}
             <div className="whitespace-pre-line">
@@ -293,8 +293,8 @@ export default function AutoZoneReceiptForm() {
             </div>
 
             {form.items.map((item, i) => (
-              <div key={i} className="text-left mb-2">
-                <div className="mb-1 text-left">
+              <div key={i} className="text-left mb-0">
+                <div className="text-left">
                   <span>{item.code}</span><span className="whitespace-pre-line ml-2 text-left pr-10">
                   {item.desc}
                 </span>
@@ -305,7 +305,7 @@ export default function AutoZoneReceiptForm() {
               </div>
             ))}
 
-            <div className="mt-2 text-right pr-25 font-mono">
+            <div className="mt -0 text-right pr-25 font-mono">
               <div>SUBTOTAL <span className="pl-10">{subtotal.toFixed(2)}</span></div>
               <div>TOTAL TAX @ 8.000% <span className="pl-10"> {tax.toFixed(2)}</span></div>
               <div>TOTAL <span className="pl-10">{total.toFixed(2)}</span> </div>
@@ -352,8 +352,8 @@ export default function AutoZoneReceiptForm() {
             </div>
             </div>
             <div className="whitespace-pre-line">
-            <span className="font-bold"> Ref No :</span>
-            <span className="mt-2 font-bold tracking-widest font-mono">{'\n'}{form.referenceNumber}</span>
+            <span className="mt-2 font-bold"> Ref No :</span>
+            <span className="font-bold tracking-widest font-mono">{'\n'}{form.referenceNumber}</span>
             </div>
           </CardContent>
         </Card>
