@@ -1,17 +1,46 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectItem, SelectContent } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue } from '@/components/ui/select';
+import { Trash2, Download, Upload } from 'lucide-react';
 import Barcode from 'react-barcode';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { FaUpload, FaTrashAlt } from "react-icons/fa";
 
 export default function AutoZoneReceiptForm() {
-  const [form, setForm] = useState({
+  interface ReceiptItem {
+    code: string;
+    desc: string;
+    price: number;
+    taxType: string;
+  }
+
+  const [form, setForm] = useState<{
+    storeName: string;
+    storeAddress: string;
+    phone: string;
+    logo: string;
+    items: ReceiptItem[];
+    cashPaid: string;
+    registerInfo: string;
+    transactionNumber: string;
+    storeNumber: string;
+    date: string;
+    time: string;
+    dateFormat: string;
+    barcode: string;
+    '# Of Items Sold': string;
+    promoMessage: string;
+    surveyInstructions: string;
+    referenceNumber: string;
+    termsAccepted: boolean;
+  }>({
     storeName: 'AutoZone 4129',
     storeAddress: '2413 W.SEVENTEENTH\nSANTA ANA, CA',
     phone: '(714) 554-1195',
@@ -24,8 +53,9 @@ export default function AutoZoneReceiptForm() {
     registerInfo: 'REG #01  CSR #08  RECEIPT #168930',
     transactionNumber: '#862071',
     storeNumber: '#4129',
-    date: '11/13/2014',
+    date: '2014-11-13',
     time: '09:49',
+    dateFormat: 'MM/DD/YYYY',
     barcode: '*4129862071111314*',
     '# Of Items Sold': '2',
     promoMessage: 'You Could Be Earning $20 With this purchase. Ask An Autozoner About AutoZone Rewards Or Visit AutoZonerewards.com.',
@@ -34,11 +64,16 @@ export default function AutoZoneReceiptForm() {
     termsAccepted: false
   });
 
+  const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const receiptRef = useRef(null);
+  const receiptContentRef = useRef(null);
+  const barcodeRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateItem = (index: number, field: string, value: any) => {
+  const updateItem = (index: number, field: 'code' | 'desc' | 'price' | 'taxType', value: string | number) => {
     const updated = [...form.items];
-    updated[index][field] = field === 'price' ? parseFloat(value) : value;
+    updated[index][field] = field === 'price' ? parseFloat(value as string) : value;
     setForm({ ...form, items: updated });
   };
 
@@ -51,8 +86,8 @@ export default function AutoZoneReceiptForm() {
       ...form,
       items: [],
       cashPaid: '',
-      logo: '',
     });
+    setLogoPreview(null);
   };
 
   const removeItem = (index: number) => {
@@ -61,7 +96,7 @@ export default function AutoZoneReceiptForm() {
     setForm({ ...form, items: updated });
   };
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: keyof typeof form, value: any) => {
     if (field === 'cashPaid') {
       const newVal = parseFloat(value);
       setForm({ ...form, [field]: isNaN(newVal) ? '' : newVal });
@@ -70,62 +105,117 @@ export default function AutoZoneReceiptForm() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    switch(form.dateFormat) {
+      case 'MM/DD/YYYY':
+        return `${month}/${day}/${year}`;
+      case 'DD/MM/YYYY':
+        return `${day}/${month}/${year}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      default:
+        return `${month}/${day}/${year}`;
+    }
+  };
+
   const subtotal = form.items.reduce((sum, item) => sum + (item.price || 0), 0);
   const tax = +(subtotal * 0.08).toFixed(2);
   const total = +(subtotal + tax).toFixed(2);
   const change = form.cashPaid ? +(parseFloat(form.cashPaid) - total).toFixed(2) : 0;
 
-  const handlePrint = () => {
-    if (form.termsAccepted) {
-      if (!receiptRef.current) {
-        alert("Receipt content is not available.");
-        return;
-      }
-      const printContents = (receiptRef.current as HTMLDivElement).innerHTML;
-      const printWindow = window.open('', '', 'width=600,height=800');
-      printWindow!.document.write(`
-        <html>
-          <head>
-            <title>Print Receipt</title>
-            <style>
-              body {
-                font-family: monospace;
-                padding: 20px;
-                background: white;
-                color: black;
-              }
-              .receipt {
-                max-width: 450px;
-                margin: auto;
-                border: 1px solid #ccc;
-                padding: 10px;
-                font-size: 14px;
-              }
-              img {
-                max-height: 80px;
-                display: block;
-                margin: 0 auto 10px;
-              }
-              .flex { display: flex; justify-content: space-between; }
-              .text-center { text-align: center; }
-              .mt-2 { margin-top: 0.5rem; }
-              .mt-4 { margin-top: 1rem; }
-              .border-b { border-bottom: 1px solid #ddd; }
-              .my-4 { margin-top: 1rem; margin-bottom: 1rem; }
-            </style>
-          </head>
-          <body>
-            <div class="receipt">
-              ${printContents}
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow!.document.close();
-      printWindow!.print();
-    } else {
-      alert("Please accept the Terms and Conditions before printing.");
+  const zoomIn = () => {
+    setZoomLevel(prevZoom => Math.min(prevZoom + 0.1, 1.5));
+  };
+
+  const zoomOut = () => {
+    setZoomLevel(prevZoom => Math.max(prevZoom - 0.1, 0.5));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target && event.target.result) {
+          setLogoPreview(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    } else if (file) {
+      alert("Please upload a valid image file.");
     }
+  };
+
+  const handleClearLogo = () => {
+    setLogoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!form.termsAccepted) {
+      alert("Please accept the Terms and Conditions before downloading.");
+      return;
+    }
+
+    if (!receiptRef.current) {
+      alert("Receipt content is not available.");
+      return;
+    }
+
+    // Set zoom level to 1 for capturing
+    const originalZoom = zoomLevel;
+    setZoomLevel(1.0);
+    
+    // Wait for the state update to apply
+    setTimeout(async () => {
+      try {
+        const receiptElement = receiptContentRef.current;
+        if (!receiptElement) {
+          alert("Receipt content is not available.");
+          setZoomLevel(originalZoom);
+          return;
+        }
+        
+        // Use html2canvas to capture the receipt with exact styling
+        const canvas = await html2canvas(receiptElement, {
+          scale: 2, // Higher scale for better quality
+          useCORS: true,
+          logging: false,
+          backgroundColor: 'white'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Create PDF with the same styling as the receipt preview
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: [canvas.width/4, canvas.height/4], // Scale down the canvas size to fit on PDF
+        });
+        
+        // Add the captured image to PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+        
+        // Save the PDF
+        pdf.save(`autozone-receipt-${new Date().toISOString().slice(0, 10)}.pdf`);
+        
+        // Restore zoom level
+        setZoomLevel(originalZoom);
+      } catch (error) {
+        console.error("Error generating PDF:", error);
+        alert("Error generating PDF. Please try again.");
+        setZoomLevel(originalZoom);
+      }
+    }, 100);
   };
 
   return (
@@ -137,155 +227,242 @@ export default function AutoZoneReceiptForm() {
         <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
           <Label>Store Name (Fixed)</Label>
           <Input value={form.storeName} readOnly className="bg-gray-200 dark:bg-gray-800" />
-          <Label>Upload Logo</Label>
-          <div className="relative border border-dashed h-16 flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-2 hover:bg-gray-200 dark:hover:bg-gray-700">
-            {form.logo ? (
-              <>
-                <img src={form.logo} alt="Logo" className="h-full object-contain" />
-                <Button size="icon" variant="ghost" className="text-red-500 absolute top-1 right-1 hover:bg-red-200 dark:hover:bg-red-100 cursor-pointer" onClick={() => updateField('logo', '')}>
-                  <Trash2 size={16} />
-                </Button>
-              </>
-            ) : (
-              <span className="text-sm p-10">Choose File</span>
-            )}
-            <Input
-              type="file"
-              accept="image/*"
-              className="absolute top-5 left-0 w-0 h-0 opacity-0 cursor-pointer"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && file.type.startsWith('image/')) {
-                  updateField('logo', URL.createObjectURL(file));
-                } else {
-                  console.error("Selected file is not an image");
-                }
-              }}
-            />
-          </div>
-          </div>
           
-          <div className="grid grid-cols-2 gap-2">
-          <div>
-          <Label>Date</Label> 
-          <Input type="date" value={form.date} onChange={(e) => updateField('date', e.target.value)} />
+          {/* Improved Logo Upload Section */}
+          <div className="mt-2">
+            <Label className="block mb-2">Upload Logo</Label>
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full">
+              <label
+                className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition w-full md:w-3/4"
+              >
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                  ref={fileInputRef}
+                />
+                <span className="text-gray-700 flex-1 truncate">
+                  {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                </span>
+                <FaUpload className="text-gray-600" />
+              </label>
+              
+                <button
+                  onClick={handleClearLogo}
+                  className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition flex items-center gap-2 hover:shadow-lg hover:scale-110 cursor-pointer"
+                  title="Remove Logo"
+                >
+                  <FaTrashAlt />
+                </button>
+            
+            </div>
           </div>
-          <div>   
-          <Label>Time</Label>
-          <Input type="time" value={form.time} onChange={(e) => updateField('time', e.target.value)} />
-          </div>       
-          </div>
+        </div>
+          
+        <div className="grid grid-cols-3 gap-2">
+          <span>
+            <Label htmlFor='date'>Date</Label>
+            <Input
+              id="date"
+              type="date"
+              className="w-40 hover:bg-gray-100 cursor-pointer"
+              value={form.date}
+              onChange={(e) => updateField('date', e.target.value)}/>
+              </span>
+              <span>
+              <Label>Date Format</Label>
+              <br/>
+              <Select value={form.dateFormat} onValueChange={(value) => updateField('dateFormat', value)}>
+                <SelectTrigger className="w-40 hover:bg-gray-100 cursor-pointer">
+                  <SelectValue placeholder={form.dateFormat} />
+                </SelectTrigger>
+                <SelectContent className="w-40 bg-white dark:bg-gray-800">
+                  <SelectItem className="hover:bg-gray-200 cursor-pointer" value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                  <SelectItem className="hover:bg-gray-200 cursor-pointer" value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                  <SelectItem className="hover:bg-gray-200 cursor-pointer" value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                </SelectContent>
+              </Select>
+            </span>
+            <span>   
+            <Label>Time</Label>
+            <Input className="w-40 hover:bg-gray-100 cursor-pointer" type="time" value={form.time} onChange={(e) => updateField('time', e.target.value)} />
+          </span>       
+        </div>
 
-          <Label>Store Address</Label>
-          <Textarea value={form.storeAddress} onChange={(e) => updateField('storeAddress', e.target.value)} />
-          <div className="whitespace-pre-line"
+        <Label>Store Address</Label>
+        <Textarea 
+          value={form.storeAddress} 
+          onChange={(e) => updateField('storeAddress', e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
               updateField('storeAddress', form.storeAddress + '\n');
             }
           }}
-          />
-          <div className="flex justify-end mt-2">
-            <Button onClick={addItem} className="bg-green-600 hover:bg-green-700 text-white cursor-pointer">+</Button>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
+        />
+        <Label className="font-bold">Receipt Items</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {form.items.map((item, index) => (
             <div key={index} className="relative bg-gray-100 dark:bg-gray-800 p-2 rounded shadow mt-2">
               <Button size="icon" variant="ghost" className="text-red-500 absolute top-1 right-1 hover:bg-red-200 dark:hover:bg-red-100 cursor-pointer" onClick={() => removeItem(index)}>
                 <Trash2 size={16} />
               </Button>
               <Label>Item Code</Label>
-              <Input value={item.code} onChange={(e) => updateItem(index, 'code', e.target.value)} />
+              <Input 
+                placeholder="Enter item code"
+               value={item.code} onChange={(e) => updateItem(index, 'code', e.target.value)} />
               <Label>Description</Label>
-              <Input value={item.desc} onChange={(e) => updateItem(index, 'desc', e.target.value)} />
-              <div className="whitespace-pre-line" onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              updateField('Description', item.desc + '\n');
-            }
-          }
-          }/>
+              <Input
+                type="text"
+                className="resize-none"
+                placeholder="Enter item description" 
+                value={item.desc} 
+                onChange={(e) => updateItem(index, 'desc', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateItem(index, 'desc', item.desc + '\n');
+                  }
+                }}
+              />
+              
               <Label>Price</Label>
-              <Input type="number" value={item.price} onChange={(e) => updateItem(index, 'price', e.target.value)} />
+              <Input
+               type="number"
+                min="0"
+                step="0.01"
+                placeholder="Enter item price"
+                value={item.price} onChange={(e) => updateItem(index, 'price', e.target.value)} />
               <Label>Tax Type</Label>
               <Select value={item.taxType} onValueChange={(value) => updateItem(index, 'taxType', value)}>
-                <SelectTrigger>{item.taxType}</SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="P">P</SelectItem>
-                  <SelectItem value="N">N</SelectItem>
+                <SelectTrigger className="w-40 hover:bg-gray-100 cursor-pointer">
+                  <SelectValue placeholder={item.taxType} />
+                </SelectTrigger>
+                <SelectContent className=" bg-white dark:bg-gray-800 cursor-pointer">
+                  <SelectItem className="hover:bg-gray-200 cursor-pointer" value="P">P</SelectItem>
+                  <SelectItem className="hover:bg-gray-200 cursor-pointer" value="N">N</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="mt-1 flex items-center justify-end">
+          <Button onClick={addItem} className="rounded-md bg-green-600 hover:bg-green-700 text-white cursor-pointer">+</Button>
+        </div>
             </div>
           ))}
-          
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
           <div> 
-          <Label>Register Info</Label>
-          <Input value={form.registerInfo} onChange={(e) => updateField('registerInfo', e.target.value)} />
-          <Label>Transaction Number</Label>
-          <Input value={form.transactionNumber} onChange={(e) => updateField('transactionNumber', e.target.value)} />
+            <Label>Register Info</Label>
+            <Input value={form.registerInfo} onChange={(e) => updateField('registerInfo', e.target.value)} />
+            <Label>Transaction Number</Label>
+            <Input value={form.transactionNumber} onChange={(e) => updateField('transactionNumber', e.target.value)} />
           </div>
           <div>
-          <Label>Store Number</Label>
-          <Input value={form.storeNumber} onChange={(e) => updateField('storeNumber', e.target.value)} />
-          <Label>Barcode</Label>
-          <Input value={form.barcode} onChange={(e) => updateField('barcode', e.target.value)} />
+            <Label>Store Number</Label>
+            <Input value={form.storeNumber} onChange={(e) => updateField('storeNumber', e.target.value)} />
+            <Label>Barcode</Label>
+            <Input value={form.barcode} onChange={(e) => updateField('barcode', e.target.value)} />
           </div>
           <div>
-          <Label># Of Items Sold</Label>1
-          <Input value={form.items.length} readOnly className="bg-gray-200 dark:bg-gray-800" />
+            <Label># Of Items Sold</Label>
+            <Input value={form.items.length} readOnly className="bg-gray-200 dark:bg-gray-800" />
           </div>
           <div>
             <Label>Change</Label>
             <Input type="text" value={change.toFixed(2)} readOnly className="bg-gray-200 dark:bg-gray-700" />
           </div>
-          </div>
-          <div className="mt-4">
-            <Label>Cash Paid</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.cashPaid}
-              placeholder="Enter amount"
-              onChange={(e) => updateField('cashPaid', e.target.value)}
-            />
-          </div>
+        </div>
+        
+        <div>
+          <Label>Cash Paid</Label>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.cashPaid}
+            placeholder="Enter amount"
+            onChange={(e) => updateField('cashPaid', e.target.value)}
+          />
+        </div>
 
-          <Label>Promotional Message</Label>
-          <Textarea value={form.promoMessage} onChange={(e) => updateField('promoMessage', e.target.value)} />
+        <Label>Promotional Message</Label>
+        <Textarea value={form.promoMessage} onChange={(e) => updateField('promoMessage', e.target.value)} />
 
-          <Label>Survey Instructions</Label>
-          <Textarea value={form.surveyInstructions} onChange={(e) => updateField('surveyInstructions', e.target.value)} />
+        <Label>Survey Instructions</Label>
+        <Textarea value={form.surveyInstructions} onChange={(e) => updateField('surveyInstructions', e.target.value)} />
 
-          <Label>Reference Number</Label>
-          <Input value={form.referenceNumber} onChange={(e) => updateField('referenceNumber', e.target.value)} />
+        <Label>Reference Number</Label>
+        <Input value={form.referenceNumber} onChange={(e) => updateField('referenceNumber', e.target.value)} />
 
-          <div className="flex items-center space-x-2 mt-4 ">
-            <input type="checkbox" checked={form.termsAccepted} onChange={(e) => updateField('termsAccepted', e.target.checked)} className="checkbox cursor-pointer" />
-            <Label className="text-xs">Accept Terms and Conditions</Label>
-          </div>
+        <div className="flex items-center space-x-2 mt-4 ">
+          <input 
+            type="checkbox" 
+            id="termsAccepted"
+            checked={form.termsAccepted} 
+            onChange={(e) => updateField('termsAccepted', e.target.checked)} 
+            className="checkbox cursor-pointer" 
+          />
+          <Label htmlFor="termsAccepted" className="text-xs">Accept Terms and Conditions</Label>
+        </div>
 
-          <div className="flex space-x-2 mt-4">
-            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 w-full py-2 text-lg font-semibold uppercase text-white cursor-pointer">
-              Create Receipt
-            </Button>
-            <Button onClick={clearReceipt} className="bg-red-600 hover:bg-red-700 text-lg font-semibold uppercase text-white cursor-pointer">
-              CLEAR
-            </Button>
-          </div>
+        <div className="flex space-x-2 mt-4">
+          <Button 
+            onClick={downloadPDF} 
+            className="bg-blue-600 hover:bg-blue-700 w-full py-2 text-lg font-semibold uppercase text-white cursor-pointer flex items-center justify-center gap-2"
+            disabled={!form.termsAccepted}
+          >
+            <Download size={18} />
+            CREATE RECEIPT
+          </Button>
+          <Button 
+            onClick={clearReceipt} 
+            className="bg-red-600 hover:bg-red-700 text-lg font-semibold uppercase text-white cursor-pointer"
+          >
+            CLEAR
+          </Button>
+        </div>
       </div>
 
       {/* Right Receipt Section */}
       <div>
         <h1 className="text-2xl font-bold text-left align mb-4">Live Preview</h1>
-        <Card className="border bg-white dark:bg-gray-900 shadow-xl scale-[1.0] max-w-[410px] w-full h-[950px] mx-auto overflow-y-auto"ref={receiptRef}>
-          <CardContent className="font-mono text-sm text-center p-4">
-            {form.logo && <img src={form.logo} alt="Logo" className="h-16 mx-auto mb-2" />}
+        
+        {/* Zoom controls */}
+        <div className="mb-2 text-right pr-40 font-mono">
+          <Button
+            onClick={zoomIn}
+            className="w-8 h-8 bg-gray-900 text-white rounded-full hover:bg-purple-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+          >
+            <span className="text-2xl">+</span>
+          </Button>
+          <Button 
+            onClick={zoomOut} 
+            className="mx-2 text-white rounded-full w-8 h-8 bg-gray-900 hover:bg-purple-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+          >
+            <span className="text-2xl">-</span>
+          </Button>
+        </div>
+        
+        <Card 
+          className="border bg-white dark:bg-gray-900 shadow-xl max-w-[410px] w-full mx-auto rounded-lg overflow-hidden"
+          ref={receiptRef}
+        >
+          <CardContent 
+            className="font-mono text-sm text-center p-4 overflow-x-auto overflow-y-auto" 
+            ref={receiptContentRef}
+            style={{ 
+              transform: `scale(${zoomLevel})`, 
+              transformOrigin: 'top left',
+              transition: 'transform 0.2s ease'
+            }}>
+            {/* Display the logo in the receipt preview */}
+            {logoPreview && (
+              <div className="mb-1 flex justify-center">
+                <img src={logoPreview} alt="Store Logo" className="h-16 max-w-full object-contain" />
+              </div>
+            )}
+            
             <div className="whitespace-pre-line">
               <span className="font-bold text-ms text-center p-4">{form.storeName} </span>
               {'\n'}{form.storeAddress}
@@ -293,11 +470,12 @@ export default function AutoZoneReceiptForm() {
             </div>
 
             {form.items.map((item, i) => (
-              <div key={i} className="text-left mb-0">
+              <div key={i} className="text-left">
                 <div className="text-left">
-                  <span>{item.code}</span><span className="whitespace-pre-line ml-2 text-left pr-10">
-                  {item.desc}
-                </span>
+                  <span>{item.code}</span>
+                  <span className="whitespace-pre-line ml-2 text-left pr-10">
+                    {item.desc}
+                  </span>
                   {item.price > 0 && (
                     <span className="pl-30">{item.price.toFixed(2)} {item.taxType}</span>
                   )}
@@ -305,7 +483,7 @@ export default function AutoZoneReceiptForm() {
               </div>
             ))}
 
-            <div className="mt -0 text-right pr-25 font-mono">
+            <div className="text-right pr-25 font-mono">
               <div>SUBTOTAL <span className="pl-10">{subtotal.toFixed(2)}</span></div>
               <div>TOTAL TAX @ 8.000% <span className="pl-10"> {tax.toFixed(2)}</span></div>
               <div>TOTAL <span className="pl-10">{total.toFixed(2)}</span> </div>
@@ -316,44 +494,58 @@ export default function AutoZoneReceiptForm() {
             <div className="text-left align text-xs">{form.registerInfo}</div>
             <div className="text-left align font-mono font-bold text-sm tracking-widest"><span>STR. TRANS </span><span>{form.transactionNumber}</span></div>
             <div className="text-left align font-mono font-bold text-sm tracking-widest"><span>Store </span><span>{form.storeNumber}</span></div>
-            <div className="text-left align font-mono font-bold text-sm tracking-widest"><span>Date </span><span>{form.date}</span><span className="text-xs font-mono"> {form.time}</span></div>
+            <div className="text-left align font-mono font-bold text-sm tracking-widest">
+              <span>Date </span>
+              <span>{formatDate(form.date)}</span>
+              <span className="text-xs font-mono"> {form.time}</span>
+            </div>
 
             <div className="text-left align text-sm font-bold"><span># OF ITEMS SOLD </span><span>{form.items.length}</span></div>
 
-            <div className="flex flex-col items-center">
-              <Barcode value={form.barcode.replace(/[^\d]/g, '')} height={40} width={2.0} displayValue={false} />
-              <div className="tracking-widest text-lg font-mono">*{form.barcode.slice(1,-1)}*</div>
+            {/* Improved barcode display */}
+            <div className="flex flex-col items-center mt-2">
+              <div ref={barcodeRef} className="tracking-widest font-mono">
+                <Barcode 
+                  value={form.barcode.replace(/[*]/g, '')} 
+                  height={40} 
+                  width={2.0} 
+                  displayValue={false}
+                  margin={0}
+                  background="#FFFFFF"
+                />
+              </div>
+              <div className="tracking-widest text-lg font-mono mt-1">{form.barcode}</div>
               <div className="tracking-widest text-2xl">**********************</div>
             </div>
             <div className="text-left align text-xs pr-25">{form.promoMessage}</div>
             <div className="tracking-widest text-2xl">**********************</div>
             <div className="text-sm font-bold tracking-widest text-center px-20">{form.surveyInstructions}</div>
             <div className="mt-2 text-xs text center">
-            at www.autozonecares.com 
-            <br/>or by calling 1-800-598-8943.
-            <br/>No purchase necessary. Ends 11/30/14. 
-            <br/>Subject to full official rules 
-            <br/>at www.autozonecares.com
+              at www.autozonecares.com 
+              <br/>or by calling 1-800-598-8943.
+              <br/>No purchase necessary. Ends 11/30/14. 
+              <br/>Subject to full official rules 
+              <br/>at www.autozonecares.com
             </div>
             <div className="whitespace-pre-line">
-            <span className="mt-2 font-bold">Ref No :</span>
-            <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
+              <span className="mt-2 font-bold">Ref No :</span>
+              <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
             </div>
             <div className="whitespace-pre-line">
-            <div className="mt-2 text-xs text-center">
-             Llena esta encuesta visitando
-            <br/>www.autozonecares.com o llamando al 
-            <br/>1-800-598-8943 para tener 
-            <br/>oportunidad de ganar $10,000.
-            <br/>No es necesario efectuar una compra. 
-            <br/>Termina el 11/30/14. Sujeto a las 
-            <br/>reglas oficiales en el sitio
-            <br/>www.autozonecares.com
-            </div>
+              <div className="mt-2 text-xs text-center">
+                Llena esta encuesta visitando
+                <br/>www.autozonecares.com o llamando al 
+                <br/>1-800-598-8943 para tener 
+                <br/>oportunidad de ganar $10,000.
+                <br/>No es necesario efectuar una compra. 
+                <br/>Termina el 11/30/14. Sujeto a las 
+                <br/>reglas oficiales en el sitio
+                <br/>www.autozonecares.com
+              </div>
             </div>
             <div className="whitespace-pre-line">
-            <span className="mt-2 font-bold"> Ref No :</span>
-            <span className="font-bold tracking-widest font-mono">{'\n'}{form.referenceNumber}</span>
+              <span className="mt-2 font-bold"> Ref No :</span>
+              <span className="font-bold tracking-widest font-mono">{'\n'}{form.referenceNumber}</span>
             </div>
           </CardContent>
         </Card>
