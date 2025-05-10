@@ -17,6 +17,7 @@ export default function AutoZoneReceiptForm() {
   interface ReceiptItem {
     code: string;
     desc: string;
+    desc2: string;
     price: number;
     taxType: string;
   }
@@ -46,8 +47,8 @@ export default function AutoZoneReceiptForm() {
     phone: '(714) 554-1195',
     logo: '',
     items: [
-      { code: '#370965', desc: '611-117.1 \n 2 @ 1/3.99', price: 7.98, taxType: 'P' },
-      { code: '611-117.1', desc: 'Dorman\n M12-1.50 21m Hex WH Nut, EA', price: 0, taxType: 'P' }
+      { code: '#370965', desc: '611-117.1 ',desc2:'2 @ 1/3.99' ,price: 7.98, taxType: 'P' },
+      { code: '611-117.1', desc: 'Dorman\nM12-1.50 21m Hx WH Nut, EA', desc2: '', price: 0, taxType: 'P' }
     ],
     cashPaid: '10.00',
     registerInfo: 'REG #01  CSR #08  RECEIPT #168930',
@@ -71,14 +72,14 @@ export default function AutoZoneReceiptForm() {
   const barcodeRef = useRef(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateItem = (index: number, field: 'code' | 'desc' | 'price' | 'taxType', value: string | number) => {
+  const updateItem = (index: number, field: keyof ReceiptItem, value: string | number) => {
     const updated = [...form.items];
     updated[index][field] = field === 'price' ? parseFloat(value as string) : value;
     setForm({ ...form, items: updated });
   };
 
   const addItem = () => {
-    setForm({ ...form, items: [...form.items, { code: '', desc: '', price: 0, taxType: 'P' }] });
+    setForm({ ...form, items: [...form.items, { code: '', desc: '',desc2:'', price: 0, taxType: 'P' }] });
   };
 
   const clearReceipt = () => {
@@ -223,7 +224,7 @@ export default function AutoZoneReceiptForm() {
       
       {/* Left Form Section */}
       <div className="space-y-4">
-        <h1 className="text-3xl font-bold text-left align mb-4">AutoZone Retail Receipt</h1>
+        <h1 className="text-2xl text-left align mb-4">AutoZone Retail Receipt</h1>
         <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
           <Label>Store Name (Fixed)</Label>
           <Input value={form.storeName} readOnly className="bg-gray-200 dark:bg-gray-800" />
@@ -313,8 +314,8 @@ export default function AutoZoneReceiptForm() {
                 placeholder="Enter item code"
                value={item.code} onChange={(e) => updateItem(index, 'code', e.target.value)} />
               <Label>Description</Label>
-              <Input
-                type="text"
+              <Textarea
+                rows={2}
                 className="resize-none"
                 placeholder="Enter item description" 
                 value={item.desc} 
@@ -325,8 +326,21 @@ export default function AutoZoneReceiptForm() {
                     updateItem(index, 'desc', item.desc + '\n');
                   }
                 }}
-              />
-              
+               />
+               <Label>Description 2</Label>
+              <Textarea
+                rows={2}
+                className="resize-none"
+                placeholder="Enter second description line" 
+                value={item.desc2} 
+                onChange={(e) => updateItem(index, 'desc2', e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateItem(index, 'desc2', item.desc2 + '\n');
+                  }
+                }}
+               />
               <Label>Price</Label>
               <Input
                type="number"
@@ -426,35 +440,37 @@ export default function AutoZoneReceiptForm() {
 
       {/* Right Receipt Section */}
       <div>
-        <h1 className="text-2xl font-bold text-left align mb-4">Live Preview</h1>
+        <h1 className="text-2xl text-left align mb-1">Live Preview</h1>
         
         {/* Zoom controls */}
         <div className="mb-2 text-right pr-40 font-mono">
           <Button
             onClick={zoomIn}
-            className="w-8 h-8 bg-gray-900 text-white rounded-full hover:bg-purple-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+            className="w-8 h-8 bg-gray-900 text-white rounded-full hover:bg-purple-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors cursor-pointer"
           >
             <span className="text-2xl">+</span>
           </Button>
           <Button 
             onClick={zoomOut} 
-            className="mx-2 text-white rounded-full w-8 h-8 bg-gray-900 hover:bg-purple-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+            className="mx-2 text-white rounded-full w-8 h-8 bg-gray-900 hover:bg-purple-600 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors cursor-pointer"
           >
             <span className="text-2xl">-</span>
           </Button>
         </div>
         
         <Card 
-          className="border bg-white dark:bg-gray-900 shadow-xl max-w-[410px] w-full mx-auto rounded-lg overflow-hidden"
+          className="border bg-white dark:bg-gray-900 shadow-xl max-w-[400px] w-full mx-auto rounded-lg overflow-hidden"
           ref={receiptRef}
         >
           <CardContent 
-            className="font-mono text-sm text-center p-4 overflow-x-auto overflow-y-auto" 
+            className="font-mono text-sm text-center p-4" 
             ref={receiptContentRef}
             style={{ 
-              transform: `scale(${zoomLevel})`, 
+              transform: `scale(${zoomLevel})`,
               transformOrigin: 'top left',
-              transition: 'transform 0.2s ease'
+              transition: 'transform 0.2s ease',
+              lineHeight: '1.1', // Reduced line spacing
+              letterSpacing: '-0.02em' // Slightly tighter character spacing
             }}>
             {/* Display the logo in the receipt preview */}
             {logoPreview && (
@@ -463,76 +479,79 @@ export default function AutoZoneReceiptForm() {
               </div>
             )}
             
-            <div className="whitespace-pre-line">
-              <span className="font-bold text-ms text-center p-4">{form.storeName} </span>
-              {'\n'}{form.storeAddress}
-              {'\n'}{form.phone}
+            <div className="whitespace-pre-line pr-20" style={{ marginBottom: '-4px',lineHeight: '1.1' }}>
+              <span className="tracking-widest font-bold text-xl text-center" style={{lineHeight:'1.1px'}}>{form.storeName}</span>
+              <br />{form.storeAddress}
+              <br />{form.phone}
             </div>
 
             {form.items.map((item, i) => (
-              <div key={i} className="text-left">
-                <div className="text-left">
+              <div key={i} className="mt-1 text-left">
+                <div>
+                  <span className="text-sm text-center pl-40 whitespace-pre-line">{item.desc2}</span>
+                  <br />
                   <span>{item.code}</span>
-                  <span className="whitespace-pre-line ml-2 text-left pr-10">
-                    {item.desc}
-                  </span>
-                  {item.price > 0 && (
-                    <span className="pl-30">{item.price.toFixed(2)} {item.taxType}</span>
-                  )}
+                  <span className="ml-2 text-left pr-10 whitespace-pre-line" style={{ lineHeight: '1' }}>
+                    {item.desc}</span> <span>{item.price > 0 && (
+                    <span className="pl-13">{item.price.toFixed(2)} {item.taxType}</span>
+                   )}</span>
+                  
                 </div>
               </div>
             ))}
 
-            <div className="text-right pr-25 font-mono">
+            <div className="text-right pr-25 font-mono" style={{ lineHeight: '1.1' }}>
               <div>SUBTOTAL <span className="pl-10">{subtotal.toFixed(2)}</span></div>
               <div>TOTAL TAX @ 8.000% <span className="pl-10"> {tax.toFixed(2)}</span></div>
               <div>TOTAL <span className="pl-10">{total.toFixed(2)}</span> </div>
-              <div>CASH <span className="pl-10"> {form.cashPaid || '0.00'}</span></div>
+              <div>CASH <span className="pl-8"> {form.cashPaid || '0.00'}</span></div>
               <div>CHANGE <span className="pl-10"> {change.toFixed(2)}</span></div>
             </div>
-
-            <div className="text-left align text-xs">{form.registerInfo}</div>
-            <div className="text-left align font-mono font-bold text-sm tracking-widest"><span>STR. TRANS </span><span>{form.transactionNumber}</span></div>
-            <div className="text-left align font-mono font-bold text-sm tracking-widest"><span>Store </span><span>{form.storeNumber}</span></div>
-            <div className="text-left align font-mono font-bold text-sm tracking-widest">
-              <span>Date </span>
-              <span>{formatDate(form.date)}</span>
-              <span className="text-xs font-mono"> {form.time}</span>
+            
+            <div className="flex flex-col space-y-(4) mt-1" style={{ lineHeight: '1' }}>
+              <div className="text-left align text-xs" style={{ marginBottom: '-4px' }}>{form.registerInfo}</div>
+              <div className="text-left align font-mono font-bold text-base tracking-widest" style={{ marginBottom: '-4px' }}><span>STR. TRANS </span><span>{form.transactionNumber}</span></div>
+              <div className="text-left align font-mono font-bold text-base tracking-widest"style={{ marginBottom: '-4px' }}><span>STORE </span><span>{form.storeNumber}</span></div>
+              <div className="text-left align font-mono font-bold text-base tracking-widest">
+                <span>Date </span>
+                <span>{formatDate(form.date)}</span>
+                <span className="text-xs font-mono"> {form.time}</span>
+              </div>
+              <div className="text-left align text-base font-bold tacking-widest"><span># OF ITEMS SOLD </span><span>{form.items.length}</span></div>
             </div>
 
-            <div className="text-left align text-sm font-bold"><span># OF ITEMS SOLD </span><span>{form.items.length}</span></div>
-
             {/* Improved barcode display */}
-            <div className="flex flex-col items-center mt-2">
-              <div ref={barcodeRef} className="tracking-widest font-mono">
+            <div className="flex flex-col items-center mt-1">
+              <div ref={barcodeRef} >
                 <Barcode 
                   value={form.barcode.replace(/[*]/g, '')} 
                   height={40} 
-                  width={2.0} 
+                  width={1.2}
+                  format='CODE39'
                   displayValue={false}
                   margin={0}
                   background="#FFFFFF"
                 />
               </div>
-              <div className="tracking-widest text-lg font-mono mt-1">{form.barcode}</div>
-              <div className="tracking-widest text-2xl">**********************</div>
+              <div className="tracking-widest text-2xl "style={{ marginTop: '-6px' }}>{form.barcode}</div>
+              <div className="tracking-widest text-2xl"style={{ margin: '-8px' }}>**********************</div>
             </div>
-            <div className="text-left align text-xs pr-25">{form.promoMessage}</div>
+            <div className="text-left align text-xs pr-30 whitespace-pre-line" style={{marginTop: '-4px', marginBottom: '-6px', lineHeight: '1.1' }}>{form.promoMessage}</div>
             <div className="tracking-widest text-2xl">**********************</div>
-            <div className="text-sm font-bold tracking-widest text-center px-20">{form.surveyInstructions}</div>
-            <div className="mt-2 text-xs text center">
+            <div className="text-base font-bold tracking-widest"style={{marginTop:'-15px'}}>{form.surveyInstructions}</div>
+            <div className="text-xs text-center pr-15" style={{marginTop:'-1px',lineHeight: '1.1' }}>
               at www.autozonecares.com 
               <br/>or by calling 1-800-598-8943.
               <br/>No purchase necessary. Ends 11/30/14. 
               <br/>Subject to full official rules 
               <br/>at www.autozonecares.com
             </div>
-            <div className="whitespace-pre-line">
-              <span className="mt-2 font-bold">Ref No :</span>
+            <div className="whitespace-pre-line pr-15 text-base" style={{marginTop:'2px', lineHeight: '1.1' }}>
+              <span className="font-bold tracking-widest">Ref No :</span>
               <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
             </div>
             <div className="whitespace-pre-line">
-              <div className="mt-2 text-xs text-center">
+              <div className="mt-1 text-xs text-center" style={{ lineHeight: '1.1' }}>
                 Llena esta encuesta visitando
                 <br/>www.autozonecares.com o llamando al 
                 <br/>1-800-598-8943 para tener 
@@ -543,8 +562,8 @@ export default function AutoZoneReceiptForm() {
                 <br/>www.autozonecares.com
               </div>
             </div>
-            <div className="whitespace-pre-line">
-              <span className="mt-2 font-bold"> Ref No :</span>
+            <div className="whitespace-pre-line" style={{ lineHeight: '1.1' }}>
+              <span className="mt-1 font-bold"> Ref No :</span>
               <span className="font-bold tracking-widest font-mono">{'\n'}{form.referenceNumber}</span>
             </div>
           </CardContent>
