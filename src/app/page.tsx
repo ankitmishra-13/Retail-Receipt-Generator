@@ -48,7 +48,7 @@ export default function AutoZoneReceiptForm() {
     logo: '',
     items: [
       { code: '#370965', desc: '611-117.1 ',desc2:'2 @ 1/3.99' ,price: 7.98, taxType: 'P' },
-      { code: '611-117.1', desc: 'Dorman\nM12-1.50 21m Hx WH Nut, EA', desc2: '', price: 0, taxType: 'P' }
+      { code: '611-117.1', desc: 'Dorman\nM12-1.50 21m Hx Whl Nut, EA', desc2: '', price: 0, taxType: 'P' }
     ],
     cashPaid: '10.00',
     registerInfo: 'REG #01  CSR #08  RECEIPT #168930',
@@ -60,7 +60,7 @@ export default function AutoZoneReceiptForm() {
     barcode: '*4129862071111314*',
     '# Of Items Sold': '2',
     promoMessage: 'You Could Be Earning $20 With this purchase. Ask An Autozoner About AutoZone Rewards Or Visit AutoZonerewards.com.',
-    surveyInstructions: 'Take a survey for a chance to win $10000',
+    surveyInstructions: 'Take  a  survey  for  a  chance  to  win  $10000',
     referenceNumber: '4129-862071-141113-1',
     termsAccepted: false
   });
@@ -486,12 +486,12 @@ export default function AutoZoneReceiptForm() {
             </div>
 
             {form.items.map((item, i) => (
-              <div key={i} className="mt-1 text-left">
+              <div key={i} className="mt-1 text-left align" style={{ lineHeight: '1.1' }}>
                 <div>
-                  <span className="text-sm text-center pl-40 whitespace-pre-line">{item.desc2}</span>
+                  <span className="text-sm text-center pl-38">{item.desc2}</span>
                   <br />
                   <span>{item.code}</span>
-                  <span className="ml-2 text-left pr-10 whitespace-pre-line" style={{ lineHeight: '1' }}>
+                  <span className="ml-2 text-left pr-10 whitespace-pre-line" style={{ lineHeight: '1.1' }}>
                     {item.desc}</span> <span>{item.price > 0 && (
                     <span className="pl-13">{item.price.toFixed(2)} {item.taxType}</span>
                    )}</span>
@@ -510,14 +510,14 @@ export default function AutoZoneReceiptForm() {
             
             <div className="flex flex-col space-y-(4) mt-1" style={{ lineHeight: '1' }}>
               <div className="text-left align text-xs" style={{ marginBottom: '-4px' }}>{form.registerInfo}</div>
-              <div className="text-left align font-mono font-bold text-base tracking-widest" style={{ marginBottom: '-4px' }}><span>STR. TRANS </span><span>{form.transactionNumber}</span></div>
-              <div className="text-left align font-mono font-bold text-base tracking-widest"style={{ marginBottom: '-4px' }}><span>STORE </span><span>{form.storeNumber}</span></div>
+              <div className="text-left align font-mono font-bold text-base tracking-widest" style={{ marginBottom: '-8px' }}><span>STR. TRANS </span><span>{form.transactionNumber}</span></div>
+              <div className="text-left align font-mono font-bold text-base tracking-widest"style={{ marginBottom: '-8px' }}><span>STORE </span><span>{form.storeNumber}</span></div>
               <div className="text-left align font-mono font-bold text-base tracking-widest">
-                <span>Date </span>
+                <span>DATE </span>
                 <span>{formatDate(form.date)}</span>
                 <span className="text-xs font-mono"> {form.time}</span>
               </div>
-              <div className="text-left align text-base font-bold tacking-widest"><span># OF ITEMS SOLD </span><span>{form.items.length}</span></div>
+              <div className="text-left align text-base font-bold tacking-widest"style={{ marginTop:'-4px' }}><span># OF ITEMS SOLD </span><span>{form.items.length}</span></div>
             </div>
 
             {/* Improved barcode display */}
@@ -536,9 +536,9 @@ export default function AutoZoneReceiptForm() {
               <div className="tracking-widest text-2xl "style={{ marginTop: '-6px' }}>{form.barcode}</div>
               <div className="tracking-widest text-2xl"style={{ margin: '-8px' }}>**********************</div>
             </div>
-            <div className="text-left align text-xs pr-30 whitespace-pre-line" style={{marginTop: '-4px', marginBottom: '-6px', lineHeight: '1.1' }}>{form.promoMessage}</div>
+            <div className="text-left align text-xs pr-30" style={{marginTop: '-4px', marginBottom: '-6px', lineHeight: '1.1' }}>{form.promoMessage}</div>
             <div className="tracking-widest text-2xl">**********************</div>
-            <div className="text-base font-bold tracking-widest"style={{marginTop:'-15px'}}>{form.surveyInstructions}</div>
+            <div className="text-base font-bold tracking-widest pr-30"style={{marginTop:'-15px'}}>{form.surveyInstructions}</div>
             <div className="text-xs text-center pr-15" style={{marginTop:'-1px',lineHeight: '1.1' }}>
               at www.autozonecares.com 
               <br/>or by calling 1-800-598-8943.
@@ -546,11 +546,11 @@ export default function AutoZoneReceiptForm() {
               <br/>Subject to full official rules 
               <br/>at www.autozonecares.com
             </div>
-            <div className="whitespace-pre-line pr-15 text-base" style={{marginTop:'2px', lineHeight: '1.1' }}>
+            <div className="whitespace-pre-line pr-20 text-base" style={{marginTop:'2px', lineHeight: '1.1' }}>
               <span className="font-bold tracking-widest">Ref No :</span>
               <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
             </div>
-            <div className="whitespace-pre-line">
+            <div className="whitespace-pre-line pr-15 text-base">
               <div className="mt-1 text-xs text-center" style={{ lineHeight: '1.1' }}>
                 Llena esta encuesta visitando
                 <br/>www.autozonecares.com o llamando al 
@@ -562,9 +562,9 @@ export default function AutoZoneReceiptForm() {
                 <br/>www.autozonecares.com
               </div>
             </div>
-            <div className="whitespace-pre-line" style={{ lineHeight: '1.1' }}>
-              <span className="mt-1 font-bold"> Ref No :</span>
-              <span className="font-bold tracking-widest font-mono">{'\n'}{form.referenceNumber}</span>
+            <div className="mt-2 whitespace-pre-line pr-20 text-base" style={{ lineHeight: '1.1' }}>
+              <span className="font-bold tracking-widest"> Ref No :</span>
+              <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
             </div>
           </CardContent>
         </Card>
