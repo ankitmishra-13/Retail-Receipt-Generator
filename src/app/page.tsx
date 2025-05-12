@@ -232,9 +232,13 @@ export default function AutoZoneReceiptForm() {
       <div className="space-y-4">
         <h1 className="text-2xl text-left align mb-4">AutoZone Retail Receipt</h1>
         <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
-          <Label>Store Name (Fixed)</Label>
-          <Input value={form.storeName} readOnly className="bg-gray-200 dark:bg-gray-800" suppressHydrationWarning />
-          
+          <Label>Store Name</Label>
+          <Input value={form.storeName}
+          type="text"
+            onChange={(e) => updateField('storeName', e.target.value)}
+            placeholder="Enter store name"
+            className="mb-2"
+            suppressHydrationWarning />
           {/* Improved Logo Upload Section */}
           <div className="mt-2">
             <Label className="block mb-2">Upload Logo</Label>
@@ -542,12 +546,27 @@ export default function AutoZoneReceiptForm() {
               </div>
             ))}
 
-            <div className="text-right pr-18 font-mono" style={{ lineHeight: '1.1' }}>
-              <div>SUBTOTAL <span className="pl-15">{subtotal.toFixed(2)}</span></div>
-              <div>TOTAL TAX @ 8.000% <span className="pl-15"> {tax.toFixed(2)}</span></div>
-              <div>TOTAL <span className="pl-15">{total.toFixed(2)}</span> </div>
-              <div>CASH <span className="pl-13"> {form.cashPaid || '0.00'}</span></div>
-              <div>CHANGE <span className="pl-15"> {change.toFixed(2)}</span></div>
+            <div className="font-mono pl-6" style={{ lineHeight: '1.1' }}>
+              <div className="flex justify-between items-right">
+              <span className="flex-1 text-right">SUBTOTAL</span>
+              <span className="flex-1 text-center">{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-right">
+              <span className="flex-1 text-right">TOTAL TAX @ 8.000%</span>
+              <span className="flex-1 text-center">{tax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-right">
+              <span className="flex-1 text-right">TOTAL</span>
+              <span className="flex-1 text-center">{total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-right">
+              <span className="flex-1 text-right">CASH</span>
+              <span className="flex-1 text-center">{form.cashPaid || '0.00'}</span>
+              </div>
+              <div className="flex justify-between items-right">
+              <span className="flex-1 text-right">CHANGE</span>
+              <span className="flex-1 text-center">{change.toFixed(2)}</span>
+              </div>
             </div>
             
             <div className="flex flex-col space-y-(4) mt-1" style={{ lineHeight: '1' }}>
