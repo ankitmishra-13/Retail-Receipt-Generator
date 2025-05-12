@@ -12,7 +12,6 @@ import Barcode from 'react-barcode';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FaUpload, FaTrashAlt } from "react-icons/fa";
-import { fontFamily } from 'html2canvas/dist/types/css/property-descriptors/font-family';
 
 
 export default function AutoZoneReceiptForm() {
@@ -328,7 +327,7 @@ export default function AutoZoneReceiptForm() {
                 <button
                   suppressHydrationWarning
                   onClick={() => removeItem(index)}
-                  className="p-2 text-red-500 hover:text-red-600 rounded-full transition flex items-center justify-center cursor-pointer"
+                  className="p-2 text-red-500 hover:text-red-600 rounded-full transition flex items-center justify-center hover:scale-110 cursor-pointer"
                   title="Remove Item"
                   type="button"
                 >
