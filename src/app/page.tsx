@@ -1,17 +1,19 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectItem, SelectContent, SelectValue } from '@/components/ui/select';
-import { Trash2, Download, Upload } from 'lucide-react';
+import { Download } from 'lucide-react';
 import Barcode from 'react-barcode';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { FaUpload, FaTrashAlt } from "react-icons/fa";
+import { fontFamily } from 'html2canvas/dist/types/css/property-descriptors/font-family';
+
 
 export default function AutoZoneReceiptForm() {
   interface ReceiptItem {
@@ -48,7 +50,7 @@ export default function AutoZoneReceiptForm() {
     logo: '',
     items: [
       { code: '#370965', desc: '611-117.1 ',desc2:'2 @ 1/3.99' ,price: 7.98, taxType: 'P' },
-      { code: '611-117.1', desc: 'Dorman\nM12-1.50 21m Hx Whl Nut, EA', desc2: '', price: 0, taxType: 'P' }
+      { code: '611-117.1', desc: 'Dorman\nM12-1.50 21mm Hx Whl Nut, EA', desc2: '', price: 0, taxType: 'P' }
     ],
     cashPaid: '10.00',
     registerInfo: 'REG #01  CSR #08  RECEIPT #168930',
@@ -74,10 +76,15 @@ export default function AutoZoneReceiptForm() {
 
   const updateItem = (index: number, field: keyof ReceiptItem, value: string | number) => {
     const updated = [...form.items];
-    updated[index][field] = field === 'price' ? parseFloat(value as string) : value;
+    if (field === 'price') {
+      updated[index][field] = parseFloat(value as string);
+    } else if (field === 'taxType') {
+      updated[index][field] = value as string;
+    } else if (field === 'code' || field === 'desc' || field === 'desc2') {
+      updated[index][field] = value as string;
+    }
     setForm({ ...form, items: updated });
   };
-
   const addItem = () => {
     setForm({ ...form, items: [...form.items, { code: '', desc: '',desc2:'', price: 0, taxType: 'P' }] });
   };
@@ -100,7 +107,7 @@ export default function AutoZoneReceiptForm() {
   const updateField = (field: keyof typeof form, value: any) => {
     if (field === 'cashPaid') {
       const newVal = parseFloat(value);
-      setForm({ ...form, [field]: isNaN(newVal) ? '' : newVal });
+      setForm({ ...form, [field]: isNaN(newVal) ? '' : newVal.toString() });
     } else {
       setForm({ ...form, [field]: value });
     }
@@ -127,7 +134,8 @@ export default function AutoZoneReceiptForm() {
   };
 
   const subtotal = form.items.reduce((sum, item) => sum + (item.price || 0), 0);
-  const tax = +(subtotal * 0.08).toFixed(2);
+  const taxableSubtotal = form.items.reduce((sum, item) => sum + ((item.taxType === 'P' ? item.price : 0) || 0), 0);
+  const tax = +(taxableSubtotal * 0.08).toFixed(2);
   const total = +(subtotal + tax).toFixed(2);
   const change = form.cashPaid ? +(parseFloat(form.cashPaid) - total).toFixed(2) : 0;
 
@@ -139,7 +147,7 @@ export default function AutoZoneReceiptForm() {
     setZoomLevel(prevZoom => Math.max(prevZoom - 0.1, 0.5));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
@@ -188,7 +196,7 @@ export default function AutoZoneReceiptForm() {
         
         // Use html2canvas to capture the receipt with exact styling
         const canvas = await html2canvas(receiptElement, {
-          scale: 2, // Higher scale for better quality
+          scale: 1, // Higher scale for better quality
           useCORS: true,
           logging: false,
           backgroundColor: 'white'
@@ -221,13 +229,12 @@ export default function AutoZoneReceiptForm() {
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-background text-foreground dark:bg-black dark:text-white">
-      
       {/* Left Form Section */}
       <div className="space-y-4">
         <h1 className="text-2xl text-left align mb-4">AutoZone Retail Receipt</h1>
         <div className="border p-4 rounded-md shadow bg-white dark:bg-gray-900">
           <Label>Store Name (Fixed)</Label>
-          <Input value={form.storeName} readOnly className="bg-gray-200 dark:bg-gray-800" />
+          <Input value={form.storeName} readOnly className="bg-gray-200 dark:bg-gray-800" suppressHydrationWarning />
           
           {/* Improved Logo Upload Section */}
           <div className="mt-2">
@@ -250,6 +257,8 @@ export default function AutoZoneReceiptForm() {
               </label>
               
                 <button
+                  type="button"
+                  disabled={!logoPreview}
                   onClick={handleClearLogo}
                   className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition flex items-center gap-2 hover:shadow-lg hover:scale-110 cursor-pointer"
                   title="Remove Logo"
@@ -269,13 +278,14 @@ export default function AutoZoneReceiptForm() {
               type="date"
               className="w-40 hover:bg-gray-100 cursor-pointer"
               value={form.date}
-              onChange={(e) => updateField('date', e.target.value)}/>
+              onChange={(e) => updateField('date', e.target.value)}
+              suppressHydrationWarning />
               </span>
               <span>
               <Label>Date Format</Label>
               <br/>
               <Select value={form.dateFormat} onValueChange={(value) => updateField('dateFormat', value)}>
-                <SelectTrigger className="w-40 hover:bg-gray-100 cursor-pointer">
+                <SelectTrigger className="w-40 hover:bg-gray-100 cursor-pointer" suppressHydrationWarning>
                   <SelectValue placeholder={form.dateFormat} />
                 </SelectTrigger>
                 <SelectContent className="w-40 bg-white dark:bg-gray-800">
@@ -287,7 +297,7 @@ export default function AutoZoneReceiptForm() {
             </span>
             <span>   
             <Label>Time</Label>
-            <Input className="w-40 hover:bg-gray-100 cursor-pointer" type="time" value={form.time} onChange={(e) => updateField('time', e.target.value)} />
+            <Input className="w-40 hover:bg-gray-100 cursor-pointer" type="time" value={form.time} onChange={(e) => updateField('time', e.target.value)} suppressHydrationWarning />
           </span>       
         </div>
 
@@ -302,20 +312,37 @@ export default function AutoZoneReceiptForm() {
             }
           }}
         />
+        
+        <Label>Phone Number</Label>
+        <Input 
+          value={form.phone} 
+          onChange={(e) => updateField('phone', e.target.value)}
+          placeholder="(XXX) XXX-XXXX"
+        />
+        
         <Label className="font-bold">Receipt Items</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {form.items.map((item, index) => (
             <div key={index} className="relative bg-gray-100 dark:bg-gray-800 p-2 rounded shadow mt-2">
-              <Button size="icon" variant="ghost" className="text-red-500 absolute top-1 right-1 hover:bg-red-200 dark:hover:bg-red-100 cursor-pointer" onClick={() => removeItem(index)}>
-                <Trash2 size={16} />
-              </Button>
+              <div className="absolute top-1 right-1">
+                <button
+                  suppressHydrationWarning
+                  onClick={() => removeItem(index)}
+                  className="p-2 text-red-500 hover:text-red-600 rounded-full transition flex items-center justify-center cursor-pointer"
+                  title="Remove Item"
+                  type="button"
+                >
+                  <FaTrashAlt />
+                </button>
+              </div>
               <Label>Item Code</Label>
               <Input 
                 placeholder="Enter item code"
                value={item.code} onChange={(e) => updateItem(index, 'code', e.target.value)} />
               <Label>Description</Label>
-              <Textarea
-                rows={2}
+              <Input
+                type="text"
+
                 className="resize-none"
                 placeholder="Enter item description" 
                 value={item.desc} 
@@ -328,8 +355,8 @@ export default function AutoZoneReceiptForm() {
                 }}
                />
                <Label>Description 2</Label>
-              <Textarea
-                rows={2}
+              <Input
+                type="text"
                 className="resize-none"
                 placeholder="Enter second description line" 
                 value={item.desc2} 
@@ -380,11 +407,11 @@ export default function AutoZoneReceiptForm() {
           </div>
           <div>
             <Label># Of Items Sold</Label>
-            <Input value={form.items.length} readOnly className="bg-gray-200 dark:bg-gray-800" />
+            <Input value={form.items.length} readOnly className="bg-gray-200 dark:bg-gray-800" suppressHydrationWarning />
           </div>
           <div>
             <Label>Change</Label>
-            <Input type="text" value={change.toFixed(2)} readOnly className="bg-gray-200 dark:bg-gray-700" />
+            <Input type="text" value={change.toFixed(2)} readOnly className="bg-gray-200 dark:bg-gray-700" suppressHydrationWarning />
           </div>
         </div>
         
@@ -459,10 +486,10 @@ export default function AutoZoneReceiptForm() {
         </div>
         
         <Card 
-          className="border bg-white dark:bg-gray-900 shadow-xl max-w-[400px] w-full mx-auto rounded-lg overflow-hidden"
+          className="bg-white dark:bg-gray-900 shadow-xl max-w-[400px] w-full mx-auto rounded-lg overflow-hidden"
           ref={receiptRef}
         >
-          <CardContent 
+          <div 
             className="font-mono text-sm text-center p-4" 
             ref={receiptContentRef}
             style={{ 
@@ -479,33 +506,49 @@ export default function AutoZoneReceiptForm() {
               </div>
             )}
             
-            <div className="whitespace-pre-line pr-20" style={{ marginBottom: '-4px',lineHeight: '1.1' }}>
-              <span className="tracking-widest font-bold text-xl text-center" style={{lineHeight:'1.1px'}}>{form.storeName}</span>
+            <div className="whitespace-pre-line pr-14" style={{ marginBottom: '-4px',lineHeight: '1.1' }}>
+              <span className="tracking-widest font-bold font-mono text-xl text-center pr-2" style={{lineHeight:'1.1px'}}>{form.storeName}</span>
               <br />{form.storeAddress}
               <br />{form.phone}
             </div>
 
+            {/* Modified item display section to ensure price stays at the right side */}
             {form.items.map((item, i) => (
-              <div key={i} className="mt-1 text-left align" style={{ lineHeight: '1.1' }}>
-                <div>
-                  <span className="text-sm text-center pl-38">{item.desc2}</span>
-                  <br />
-                  <span>{item.code}</span>
-                  <span className="ml-2 text-left pr-10 whitespace-pre-line" style={{ lineHeight: '1.1' }}>
-                    {item.desc}</span> <span>{item.price > 0 && (
-                    <span className="pl-13">{item.price.toFixed(2)} {item.taxType}</span>
-                   )}</span>
+              <div key={i} className="mt-1 text-left" style={{ lineHeight: '1.1' }}>
+                <div className="flex flex-col w-full">
+                  {/* Display desc2 at the beginning if it exists */}
+                  {item.desc2 && (
+                    <div className="text-sm text-center pl-10">
+                      {item.desc2}
+                    </div>
+                  )}
                   
+                  {/* Display item code, description, and price in a flex container */}
+                  <div className="flex justify-between w-full">
+                    <div className="flex-1" style={{ marginLeft: i === 1 ? '10px' : '0' }}>
+                      <span>{item.code}</span>
+                      <span className="whitespace-pre-line" style={{ marginLeft: i === 1 ? '8px' : '25px', lineHeight: '1.1' }}>
+                        {item.desc}
+                      </span>
+                    </div>
+                    
+                    {/* Price and tax type always at the right */}
+                    {item.price > 0 && (
+                      <div className="text-right whitespace-nowrap pr-13">
+                        {item.price.toFixed(2)} {item.taxType}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
 
-            <div className="text-right pr-25 font-mono" style={{ lineHeight: '1.1' }}>
-              <div>SUBTOTAL <span className="pl-10">{subtotal.toFixed(2)}</span></div>
-              <div>TOTAL TAX @ 8.000% <span className="pl-10"> {tax.toFixed(2)}</span></div>
-              <div>TOTAL <span className="pl-10">{total.toFixed(2)}</span> </div>
-              <div>CASH <span className="pl-8"> {form.cashPaid || '0.00'}</span></div>
-              <div>CHANGE <span className="pl-10"> {change.toFixed(2)}</span></div>
+            <div className="text-right pr-18 font-mono" style={{ lineHeight: '1.1' }}>
+              <div>SUBTOTAL <span className="pl-15">{subtotal.toFixed(2)}</span></div>
+              <div>TOTAL TAX @ 8.000% <span className="pl-15"> {tax.toFixed(2)}</span></div>
+              <div>TOTAL <span className="pl-15">{total.toFixed(2)}</span> </div>
+              <div>CASH <span className="pl-13"> {form.cashPaid || '0.00'}</span></div>
+              <div>CHANGE <span className="pl-15"> {change.toFixed(2)}</span></div>
             </div>
             
             <div className="flex flex-col space-y-(4) mt-1" style={{ lineHeight: '1' }}>
@@ -538,19 +581,19 @@ export default function AutoZoneReceiptForm() {
             </div>
             <div className="text-left align text-xs pr-30" style={{marginTop: '-4px', marginBottom: '-6px', lineHeight: '1.1' }}>{form.promoMessage}</div>
             <div className="tracking-widest text-2xl">**********************</div>
-            <div className="text-base font-bold tracking-widest pr-30"style={{marginTop:'-15px'}}>{form.surveyInstructions}</div>
-            <div className="text-xs text-center pr-15" style={{marginTop:'-1px',lineHeight: '1.1' }}>
+            <div className="text-2xl font-bold tracking-widest px-2" style={{marginTop:'-4px', lineHeight:'1.1', fontFamily: 'Courier New, monospace'}}>{form.surveyInstructions}</div>
+            <div className="text-xs text-center pr-5" style={{marginTop:'1px',lineHeight: '1.1' }}>
               at www.autozonecares.com 
               <br/>or by calling 1-800-598-8943.
               <br/>No purchase necessary. Ends 11/30/14. 
               <br/>Subject to full official rules 
               <br/>at www.autozonecares.com
             </div>
-            <div className="whitespace-pre-line pr-20 text-base" style={{marginTop:'2px', lineHeight: '1.1' }}>
-              <span className="font-bold tracking-widest">Ref No :</span>
-              <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
+            <div className="whitespace-pre-line text-base"style={{ fontFamily: 'Courier New, monospace' }}>
+              <span className="font-bold tracking-wide text-2xl flex justify-center">Ref No:</span>
+              <span className="font-bold text-2xl tracking-wide block -mt-3">{form.referenceNumber}</span>
             </div>
-            <div className="whitespace-pre-line pr-15 text-base">
+            <div className="whitespace-pre-line text-base">
               <div className="mt-1 text-xs text-center" style={{ lineHeight: '1.1' }}>
                 Llena esta encuesta visitando
                 <br/>www.autozonecares.com o llamando al 
@@ -562,11 +605,11 @@ export default function AutoZoneReceiptForm() {
                 <br/>www.autozonecares.com
               </div>
             </div>
-            <div className="mt-2 whitespace-pre-line pr-20 text-base" style={{ lineHeight: '1.1' }}>
-              <span className="font-bold tracking-widest"> Ref No :</span>
-              <span className="font-bold tracking-widest">{'\n'}{form.referenceNumber}</span>
+            <div className="mt-2 whitespace-pre-line text-base"style={{ fontFamily: 'Courier New, monospace' }}>
+              <span className="font-bold tracking-wide text-2xl flex justify-center">Ref No:</span>
+              <span className="font-bold tracking-wide text-2xl block -mt-3">{form.referenceNumber}</span>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     </div>
